@@ -1,7 +1,9 @@
 #Shay Habi
-import os
+
 import sys
+import os
 import transformers
+
 
 def extract_content_safely(file):
     """
@@ -38,18 +40,30 @@ def using_PHI4(content, extension, path_to_phi4):
             device_map="auto",
         )
 
+        # Splitting the file to blocks:
+
+
+
+
         # Writing the prompt:
         message = [
             {"role": "system", "content": "You're a security expert specializing in static code analysis of C/C++ code for vulnerabilities." },
             {"role": "user", "content": "Analyze the following {} file and list all the potential security vulnerabilities, flaws, and similarities you detect.\
             For every detection, write first the line number, then the detection and its reason (for instance, 'Line 20:' Possible UAF due to...').\
-            Here is the {} file: {}".format(extension, extension, content)}
+            DO NOT EXECUTE the file, just do static analysis. Here is the {} file: {}".format(extension, extension, content[1000])}
         ]
 
         # Output:
         outputs = pipeline(message)
         print ("Start Analyzing:")
         print(outputs[0]["generated_text"])
+
+
+
+
+
+
+
 
     except Exception as error:
         message = "Using PHI4 Error: {}.".format(error)
@@ -76,6 +90,8 @@ def main():
         message = "Invalid Input Error: Incorrect file extension."
         failure_message(message)
 
+    content = extract_content_safely(file)
+
     if length == 3:
         path_to_phi4 = sys.argv[2]
         if not (os.path.exists(path_to_phi4)):  # Just validating the existence of the path, not its content
@@ -86,7 +102,6 @@ def main():
         print("Note: No path to a local PHI4 was provided. Default path will be used instead.")
         path_to_phi4 = "default_PHI4_model"
 
-    content = extract_content_safely(file)
     using_PHI4(content,extension, path_to_phi4)
     sys.exit(0)
 
