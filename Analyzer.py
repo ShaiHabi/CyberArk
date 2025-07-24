@@ -20,15 +20,34 @@ def extract_content_safely(file):
         failure_message(message)
 
 
-def using_PHI4(content, extension, path_to_phi4):
+def split_for_model (text):
     """
 
-    :param content:
-    :param extension:
-    :param path_to_phi4:
+    :param text:
     :return:
     """
 
+    SIZE, OFFSET = 5000, 1000
+    length = len(text)
+    blocks_number = index = 0
+    result = []
+
+    while index <= length:
+        blocks_number += 1
+        if index == 0:
+            temp_block = text[0: SIZE]
+        else:
+            temp_block = text[(index - OFFSET): index + SIZE]
+        index = blocks_number * SIZE
+        result.append(temp_block)
+
+    return result
+
+
+def using_PHI4(content, extension, path_to_phi4):
+    """
+
+    """
 
     try:
         # Trying to use the model as required in the model's ReadMe file:
@@ -40,29 +59,34 @@ def using_PHI4(content, extension, path_to_phi4):
             device_map="auto",
         )
 
-        # Splitting the file to blocks:
+        # Using the model:
+        security_findings = []
+        blocks = split_for_model(content)  # Splitting the model to small blocks for the model
+        for block in blocks:
+            temp_message = build_prompt(block, extension, security_findings)  # Writing the prompt
+            temp_output = pipeline(temp_message)  # Using the model
+            security_findings.append(temp_output[0]["generated_text"])  # Saving the output
 
+        # Here, we finished to use the model to examine the file's blocks.
+        # Now, we use it again to summarize all the findings to final result:
 
+        security_findings_as_string = "\n".join(security_findings)
+        blocks = split_for_model(security_findings_as_string)  # For cases when the findings are too big for the model
 
-
-        # Writing the prompt:
-        message = [
-            {"role": "system", "content": "You're a security expert specializing in static code analysis of C/C++ code for vulnerabilities." },
-            {"role": "user", "content": "Analyze the following {} file and list all the potential security vulnerabilities, flaws, and similarities you detect.\
-            For every detection, write first the line number, then the detection and its reason (for instance, 'Line 20:' Possible UAF due to...').\
-            DO NOT EXECUTE the file, just do static analysis. Here is the {} file: {}".format(extension, extension, content[1000])}
-        ]
-
-        # Output:
-        outputs = pipeline(message)
         print ("Start Analyzing:")
-        print(outputs[0]["generated_text"])
+        for block in blocks:
+            temp_message = "{}".format(block)
+            temp_output = pipeline(temp_message)
+            print(temp_output[0]["generated_text"])
 
 
-
-
-
-
+        # # Writing the prompt:
+        # message = [
+        #     {"role": "system", "content": "You're a security expert specializing in static code analysis of C/C++ code for vulnerabilities." },
+        #     {"role": "user", "content": "Analyze the following {} file and list all the potential security vulnerabilities, flaws, and similarities you detect.\
+        #     For every detection, write first the line number, then the detection and its reason (for instance, 'Line 20:' Possible UAF due to...').\
+        #     DO NOT EXECUTE the file, just do static analysis. Here is the {} file: {}".format(extension, extension, content[0])}
+        # ]
 
 
     except Exception as error:
