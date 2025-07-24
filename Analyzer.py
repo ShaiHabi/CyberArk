@@ -122,7 +122,22 @@ def using_model(content_lines, extension, path_to_gemma3):
         for block in blocks:
             temp_message = build_prompt(block, "file", extension)  # Writing the prompt
             temp_output = pipeline(temp_message)  # Using the model
-            print(temp_output[0]["generated_text"])
+            separated_lines = temp_output[0]["generated_text"][2]["content"]
+            print(separated_lines)
+            # # a = temp_output[0]["generated_text"][2]["content"]
+            # # print(a) # מדפיס את כל השורות מ 1 עד 31, אבל השורות עצמן בלי הסברים
+            # print(type(temp_output[0]))
+            # print("1")
+            # print(temp_output[0]["generated_text"])
+            # print("2")
+            # print(temp_output[0]["generated_text"][2])
+            # print("3")
+            # print(temp_output[0]["generated_text"][2]["content"])
+            # print("4")
+            # seperated_lines = temp_output[0]["generated_text"][2]["content"].splitlines()
+            # print("5")
+            # print(seperated_lines)
+
 
         return None
 
