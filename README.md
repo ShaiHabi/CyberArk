@@ -1,23 +1,32 @@
-** Analyzer.py **
+**Analyzer.py**
 
-1. Goal:
-  This Python tool is a LLM-driven tool, that looks for code vulnerabilities in C\C++ code files.
-  Thus, by using Google's GEMMA3B:1B  model.
-  The tool works locally, namely without any internet connection.
-2. Requirements:
-   In order to use this tool, one must varify that:
-   a. Google's gemma31b moodle is already exists locally in the computer.
-   b. Those libraries are installed: transformers, torch, safetensors, huggingface_hub.
-3. Usage:
-   In order to use this tool via Terminals, one must provide 2 arguments:
-   a. A C/CPP file - MUST.
-   b. A path to a folder containing gemma31b's files - AN OPTION:
-       i.In case the model is already exists, one can enter the actual path to the relevant folder.
-       ii. Otherwise, if not providing any path, a default one will be chosen. This option assume there is a folder named "default_gemma31b_model" in with the model in the same folder that Analyzer.py exists.
-   c. In order to use the tool, write the following in the terminal:
-   >> py (or python)     Analyzer.py     file_name     path_to_model.
-4. Project's architecture:
-   The project can be seperated to 3 main sections:
-   a. First, the code extract safetly (without execution of the file) the file's lines.
-   b. Second, it seperate those lines to blocks (of max size) - in order to let the modle handle them correctly.
-   c. Lastly, the model get each block and analyst it. Its response is printed for the user.
+**1. Goal:**
+  This Python tool is a LLM-based analyzer that scans C/C++ source code files for potential vulnerabilities and security issues using Google's **GEMMA-3B:1B** model.  
+  It analyzes the provided code and prints a list of detected vulnerabilities or security-relevant patterns found in the file.
+  The tool runs entirely locally, with no internet connection required.
+
+**2. Requirements:**
+   To use this tool, make sure that:
+   a. Google's gemma31b moodle is already downloaded and available locally in your computer.
+   b. The following Python libraries are installed: transformers, torch, safetensors, huggingface_hub.
+   
+**3. Usage:**
+   To run this tool via Terminals, provide the following arguments:
+   a. Source File(required):
+       AC/CPP file - MUST.
+   b. Model Folder Path (Optional):
+       A path to a folder containing gemma31b's files. Notice:
+       i. If provided, one must enter the actual(not relative) path to the relevant folder.
+       ii. If no path is provided, the tool uses a default **relative** path named "default_gemma31b_model".  
+           In that case, make sure that this folder exists in the **same directory as "Analyzer.py"**, and that it contains all the required model files.
+   c. Example usage: :
+   > python     Analyzer.py     file_name     path_to_model
+
+**4. Project's architecture:**
+  The project is divided into three main stages:
+   a. Safe Reading:
+      The tool safely reads the file's contents **without executing it**, line by line.
+   b. Block Splitting:
+     The lines are grouped into blocks (up to max size of 750 chars), to ensure compatibility with the model's input constraints.
+   c. Model Inference:
+      Each block is passed to the model for analysis. The model's responsed for each block is printed to the user.
