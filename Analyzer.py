@@ -21,7 +21,7 @@ def extract_content_safely(file):
         failure_message(message)
 
 
-def split_for_model(text_lines, size=1000):
+def split_for_model(text_lines, size=750):
     """
 
     :param text_lines:
@@ -59,41 +59,36 @@ def split_for_model(text_lines, size=1000):
 
 
 def build_prompt(text, classification, extension, relevant_data=None):
-    """
-
-    :param text:
-    :param classification:
-    :param extension:
-    :param relevant_data:
-    :param lines:
-    :return:
-    """
 
     system = {
         "role": "system",
-        "content": "You're a security expert specializing in static code analysis of C/C++ code for vulnerabilities."
+        "content": "You're a security researcher specializing in static code analysis of C/C++ code.\n"
+                   "You read each line and know to report only those with severe security flaws (not C/CPP bugs)."
     }
 
-    if classification == "file":
-        prompt = ("Conduct a static analysis for a {} code file to detect vulnerabilities and security flaws.\n"
-                  "The following block is a part of the overall code, which was split to small sizes-blocks.\n"
-                  "Read and analyze this block and identify any *meaningful* vulnerabilities and security flaws.\n"
-                  "For each finding,you must write and follow this format:\n"
-                  "'Line <number>: Possible <flaw/vulnerability> \n'.\n"
-                  "Begin each finding in a new row.Do NOT give more explanations, and do not repeat the prompt itself!\n"
-                  "Here is the code:\n {}.".format(extension, text)) # I deleted relevant_data
+    prompt = (
+        "In the following code, for each line decide if the line contains a real-in use security flaw.\n"
+        "DO NOT MENTION general errors or potential threats that appear in C/CPP codes (overflows, calculations,etc).\n"
+        "Your decision **MUST** follow those rules:\n"
+        "- DO NOT write about safe lines, and do not say 'no vulnerability','no obvious vulnerability','safe', or similar.\n"
+        "- DO NOT write about #define, #include, MAX_*, or comments unless clearly used in unsafe code.\n"
+        "- DO NOT repeat the same issue for many lines. Report once only if the context is identical.\n"
+        "- DO NOT speculate or guess. ONLY report visible issues from this block.\n\n"
+        "- DO NOT mention overflows at all. DO NOT mention 'no vulnerability' lines.\n"
+        "Format MUST be as follows:\n"
+        "Line number: Possible vulnerability - few words reason\n\n"
+        "Code:\n{}". format(text)
+    )
 
-
-
-    else:  # classification == "summarize"
-        prompt = ("Conduct a static analysis for a {} code file to detect potential vulnerabilities and security flaws."
-                  "The following block is a segment of the full code."
-                  "Identify only meaningful issues — avoid speculative or trivial findings (e.g., harmless includes)."
-                  "Read it carefully; If you have new conclusions, mention them in the reasoning section below."
-                  "Otherwise, just repeat what is already written."
-                  "Your response should follow this format, when you have the basic data you need in the block:"
-                  "Line X : Possible <flaw/vulnerability> due to <give the reason here> \n."
-                  "Here is the code: {}". format(extension, text))
+    # else:  # classification == "summarize"
+    #     prompt = ("Conduct a static analysis for a {} code file to detect potential vulnerabilities and security flaws."
+    #               "The following block is a segment of the full code."
+    #               "Identify only meaningful issues — avoid speculative or trivial findings (e.g., harmless includes)."
+    #               "Read it carefully; If you have new conclusions, mention them in the reasoning section below."
+    #               "Otherwise, just repeat what is already written."
+    #               "Your response should follow this format, when you have the basic data you need in the block:"
+    #               "Line X : Possible <flaw/vulnerability> due to <give the reason here> \n."
+    #               "Here is the code: {}". format(extension, text))
 
     # return prompt
     user = {"role": "user", "content": prompt}
@@ -117,6 +112,7 @@ def using_model(content_lines, extension, path_to_gemma3):
             max_new_tokens=1024
         )
 
+        #Using the model:
         blocks = split_for_model(content_lines)  # Splitting the content to small blocks for the model
         print(" === Analysis === ")
         for block in blocks:
@@ -124,25 +120,11 @@ def using_model(content_lines, extension, path_to_gemma3):
             temp_output = pipeline(temp_message)  # Using the model
             separated_lines = temp_output[0]["generated_text"][2]["content"]
             print(separated_lines)
-            # # a = temp_output[0]["generated_text"][2]["content"]
-            # # print(a) # מדפיס את כל השורות מ 1 עד 31, אבל השורות עצמן בלי הסברים
-            # print(type(temp_output[0]))
-            # print("1")
-            # print(temp_output[0]["generated_text"])
-            # print("2")
-            # print(temp_output[0]["generated_text"][2])
-            # print("3")
-            # print(temp_output[0]["generated_text"][2]["content"])
-            # print("4")
-            # seperated_lines = temp_output[0]["generated_text"][2]["content"].splitlines()
-            # print("5")
-            # print(seperated_lines)
 
-
+        print(" === End of Analysis === ")
         return None
 
-        #
-        #
+
         # # Using the model:
         # security_findings = []
         # blocks = split_for_model(content_lines)  # Splitting the content to small blocks for the model
