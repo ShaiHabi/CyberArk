@@ -18,13 +18,13 @@ a. Source File(required):
 A C/CPP file - MUST.
 b. Model Folder Path (Optional):
 A path to a folder containing gemma31b's files. Notice:
-i. If provided, one must enter the actual(not relative) path to the relevant folder.
+i. If provided, one must enter the absolute (not relative) path to the relevant folder.
 ii. If no path is provided, the tool uses a default **relative** path named "default\_gemma31b\_model".  
 In that case, make sure that this folder exists in the **same folder as "Analyzer.py"**, and that it contains all the required model files.
 c. Example usage:
 To run this tool, write the following in the Terminal:
 > python  Analyzer.py file\_name  path\_to\_model
-For instance: > py Analyzer.py notes.cpp C:\\Users\\Shay\\Desktop\\gemma\_model (actuacl path)
+For instance: > py Analyzer.py notes.cpp C:\\Users\\Shay\\Desktop\\gemma\_model (absolute path)
 For instance: > py Analyzer.py notes.cpp default\_gemma31b\_model (relative path)
 
 
