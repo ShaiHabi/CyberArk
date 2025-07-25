@@ -26,8 +26,8 @@ def extract_content_safely(file):
 
 def join_for_model(text_lines, size=750):
     """
-    Join separated lines to blocks of maximum size, in order to give to Gemma3.
-    Thus, we maximize the model's change to analyze the code correctly.
+    Joins separated lines to blocks of maximum size, in order to give to Gemma3 and not exceeding the model's size limit.
+    The blocks help the model to have "the bigger picture" instead of analyze each line separately.
 
     :param text_lines: List of strings (each index is separated line)
     :param size: int (maximum number of chars in each block)
@@ -50,7 +50,7 @@ def join_for_model(text_lines, size=750):
             temp_total_chars += len(text_lines[line_index])
             line_index += 1
 
-        if start == line_index:  # len(line)> size. Extremely edge case.
+        if start == line_index:  # len(line)> size. In rare cases when a single line might exceed the block size limit.
             line = text_lines[line_index]
             temp_blocks = [line[j:j+size] for j in range(0, len(line), size) ]
             blocks.extend(temp_blocks)  # Each new block is already a string
@@ -63,12 +63,11 @@ def join_for_model(text_lines, size=750):
     return blocks
 
 
-def writing_prompt(text, classification, extension):
+def writing_prompt(text, extension):
     """
-    Writing a prompt for gemma31b model according to its classification: prompt to analyse or to summarize.
+    Writing a prompt for gemma31b model.
 
-    :param text: String
-    :param classification: String
+    :param text: String (file's lines)
     :param extension: String
     :return: List of dictionaries
     """
@@ -78,26 +77,15 @@ def writing_prompt(text, classification, extension):
         "content": "You're a security expert specializing in static code analysis of C/C++ code for vulnerabilities.\n"
     }
 
-    if classification == "file":
-        prompt = (
-            "You conduct a static analysis for {} code file to detect potential vulnerabilities and securities flaws.\n"
-            "The following is segment of the whole code: \n {} \n" 
-            "DO NOT REPORT lines without threat, vulnerability or security flaw. DO NOT REPORT safe code lines. \n"
-            "You must report any line with potential threat, such as UAF, stack based buffer overflows, DOS, etc.\n"
-            "NOTICE - DO NOT COPY THE LINE ITSELF, JUST THE NUMBER.\n"
-            "Each report MUST be in this format.:\n"
-            "Line <number>: Possible <issue>, due to <few words reason>\n. \n".format(extension, text)
-        )
-
-    else:  # classification == "summarize"
-        prompt = (
-            "You've conducted a static analysis for a {} code to detect potential vulnerabilities and security flaws.\n"
-            "Here is a segment of your result list: \n {}\n"
-            "Your response MUST keep the exists form of the previous reports.If you can, mention shortly how to fix to problem.\n"
-            "If you find a report irrelevant - ignore it. If you find connection between lines - report them. \n "
-            "DO NOT ASK FOR ANY USER'S RESPONSE. DO NOT USE '*', keep your response easy readable. \n."
-            .format(extension, text)
-        )
+    prompt = (
+        "You conduct a static analysis for {} code file to detect potential vulnerabilities and security flaws.\n"
+        "The following is segment of the whole code: \n {} \n" 
+        "DO NOT REPORT lines without threat, vulnerability or security flaw. DO NOT REPORT safe code lines. \n"
+        "You must report any line with potential threat, such as UAF, stack based buffer overflows, DOS, etc.\n"
+        "NOTICE - DO NOT COPY THE LINE ITSELF, JUST THE NUMBER.\n"
+        "Each report MUST be in this format:\n"
+        "Line <number>: Possible <issue>, due to <few words reason>\n. \n".format(extension, text)
+    )
 
     # return prompt
     user = {"role": "user", "content": prompt}
@@ -130,24 +118,15 @@ def using_model(file_name, content_lines, extension, path_to_gemma3):
         )
 
         # Using the model:
-        security_findings = []
         blocks = join_for_model(content_lines)  # Splitting the content to small blocks for the model
+        print("\n=== Analyze {} ===".format(file_name))
+
         for block in blocks:
-            temp_message = writing_prompt(block, "file", extension)  # Writing the prompt
+            temp_message = writing_prompt(block, extension)  # Writing the prompt
             temp_output = pipeline(temp_message)  # Using the model
             separated_lines = temp_output[0]["generated_text"][2]["content"]  # Model's generated text response only
-            security_findings.append(separated_lines)  # Saving the output
+            print(separated_lines)
 
-        print("security findings so far:\n{}".format(security_findings)) ########################################################
-        # Here, we finished to use the model to examine the file's blocks.
-        # Now, we use it again to summarize all the findings to final result, which will be printed for the user:
-
-        blocks = join_for_model(security_findings)  # For cases when the findings are too big for the model
-        print("=== Analyze {} ===".format(file_name))
-        for block in blocks:
-            temp_message = writing_prompt(block, "summarize", extension)
-            temp_output = pipeline(temp_message)
-            print(temp_output[0]["generated_text"][2]["content"])
         print(" === End of Analysis === ")
 
     except Exception as error:
@@ -157,7 +136,7 @@ def using_model(file_name, content_lines, extension, path_to_gemma3):
 
 def failure_message(message):
     """
-    Prints message to the user, and adds that the program fails. Afterward, terminates the run.
+    Prints an error message to the user and terminates the program.
 
     :param message: String
     :return: None
@@ -177,7 +156,7 @@ def main():
     file = sys.argv[1]
     extension = os.path.splitext(file)[1].lower()
     if extension not in [".c", ".cpp"]:
-        message = "Invalid Input Error: Incorrect file extension."
+        message = "Invalid Input Error: Unsupported file extension."
         failure_message(message)
 
     # Extracting and numbering the file's lines:
@@ -192,7 +171,7 @@ def main():
         path_to_gemma3 = "default_gemma31b_model"
 
     if not (os.path.exists(path_to_gemma3)):  # Just validating the existence of the path, not its content
-        message = "Invalid Input Error: The gemma3b1 path is invalid or not exist."
+        message = "Invalid Input Error: The gemma3b1 path is invalid or does not exist."
         failure_message(message)
 
     # Sending to the model analysis:
