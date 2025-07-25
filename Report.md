@@ -1,6 +1,6 @@
 Work Summary Report – Shay Habi
 
-This document provides a detailed report of the development stages, the reasoning behind my decisions, and my implementation choices throughout the project.In the git you may find the PDF of this document as well.
+This document provides a detailed report of the development stages, the reasoning behind my decisions, and my implementation choices throughout the project.
 
 Initial Setup and Exploration:
 
