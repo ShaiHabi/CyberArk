@@ -1,6 +1,7 @@
 **Analyzer.py**
 Author: Shay Habi
 
+
 **1. Goal:**
 This Python tool is a LLM-based analyzer that scans C/C++ source code files for potential vulnerabilities and security issues using Google's **GEMMA-3B:1B** model.  
 It analyzes the provided code and prints a list of detected vulnerabilities or security-relevant patterns found in the file.
